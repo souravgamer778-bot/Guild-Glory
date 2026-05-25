@@ -1,0 +1,380 @@
+import React, { useState, useEffect } from 'react';
+import { Lock, Cpu, Eye, Zap, Crosshair } from 'lucide-react';
+
+const playSound = (type: 'type' | 'click' | 'success' | 'error') => {
+  const audio = new Audio();
+  if (type === 'type') {
+    audio.src = 'https://actions.google.com/sounds/v1/ui/button_click.ogg';
+    audio.playbackRate = 2.0;
+    audio.volume = 0.2;
+  } else if (type === 'click') {
+    audio.src = 'https://actions.google.com/sounds/v1/ui/button_click.ogg';
+    audio.volume = 0.5;
+  } else if (type === 'success') {
+    audio.src = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flick.ogg';
+    audio.volume = 0.5;
+  } else if (type === 'error') {
+    audio.src = 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg';
+    audio.volume = 0.3;
+  }
+  audio.play().catch(() => {});
+};
+
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(false);
+
+  // Bot states
+  const [currentView, setCurrentView] = useState<'intro' | 'target' | 'bot' | 'file' | 'final'>('target');
+  const [uid, setUid] = useState('');
+  const [guildUid, setGuildUid] = useState('');
+  const [selectedBot, setSelectedBot] = useState('ULTRA');
+  const [glory, setGlory] = useState(0);
+  const [injectionProgress, setInjectionProgress] = useState(0);
+  const [injectionComplete, setInjectionComplete] = useState(false);
+  const [uptime, setUptime] = useState(0);
+
+  const handleInitiateScan = () => {
+    if (uid.length < 8 || uid.length > 12 || isNaN(Number(uid))) {
+      playSound('error');
+      alert("ERROR: INVALID IDENTIFIER // Please enter a valid numerical UID (8-12 digits).");
+      return;
+    }
+    playSound('click');
+    setCurrentView('bot');
+  };
+
+  const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === '12345') {
+      playSound('success');
+      setIsAuthenticated(true);
+      setError(false);
+      setCurrentView('intro');
+      setTimeout(() => {
+        setCurrentView('target');
+      }, 3000);
+    } else {
+      playSound('error');
+      setError(true);
+      setPassword('');
+      setTimeout(() => setError(false), 2000);
+    }
+  };
+
+  useEffect(() => {
+    if (currentView === 'final') {
+      const interval = setInterval(() => {
+        setUptime(prev => {
+          const newUptime = prev + 1;
+          if (newUptime % 180 === 0 && newUptime > 0) {
+            setGlory(g => g + 1000);
+            playSound('success');
+          }
+          return newUptime;
+        });
+      }, 1000);
+      return () => {
+        clearInterval(interval);
+        setUptime(0);
+        setGlory(0);
+      };
+    }
+  }, [currentView]);
+
+  useEffect(() => {
+    if (currentView === 'file') {
+      setInjectionProgress(0);
+      setInjectionComplete(false);
+      playSound('type');
+      
+      let currentStep = 0;
+      const interval = setInterval(() => {
+        currentStep++;
+        setInjectionProgress(currentStep); // 100 steps * 100ms = 10s
+        if (currentStep % 10 === 0 && currentStep < 100) {
+           playSound('type');
+        }
+        
+        if (currentStep >= 100) {
+          clearInterval(interval);
+          setInjectionComplete(true);
+          playSound('success');
+        }
+      }, 100);
+      
+      return () => clearInterval(interval);
+    }
+  }, [currentView]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#050507] text-[#d946ef] font-mono flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="cyber-bg"></div>
+        <div className="scanlines-overlay"></div>
+        
+        <div className="relative z-10 w-full max-w-md bg-[rgba(12,14,20,0.85)] p-8 rounded-lg border border-[rgba(217,70,239,0.3)] backdrop-blur-sm shadow-[0_0_30px_rgba(217,70,239,0.15)] clip-path-auth">
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-20 h-20 bg-[#d946ef]/10 rounded-full flex items-center justify-center mb-4 border border-[#d946ef]/50 shadow-[0_0_15px_rgba(217,70,239,0.4)]">
+              <Lock className="w-10 h-10 text-[#d946ef]" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-[0.2em] text-center text-white">SECURITY OVERRIDE</h1>
+            <p className="text-[#d946ef]/60 mt-2 text-sm tracking-widest uppercase">GLORY Protocol // Auth</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  playSound('type');
+                  setPassword(e.target.value);
+                }}
+                placeholder="ENTER ACCESS CODE"
+                className={`w-full bg-black/50 border ${error ? 'border-red-500 text-red-500' : 'border-[#d946ef]/50 text-[#d946ef]'} p-4 text-center tracking-[0.3em] rounded focus:outline-none focus:border-[#d946ef] focus:shadow-[0_0_15px_rgba(217,70,239,0.3)] transition-all`}
+              />
+              {error && (
+                <p className="text-red-500 text-center mt-2 text-xs tracking-widest animate-pulse">
+                  ERROR: ACCESS DENIED
+                </p>
+              )}
+            </div>
+
+            <button
+              onClick={() => playSound('click')}
+              type="submit"
+              className="w-full btn-cyber py-4 flex items-center justify-center gap-3 text-lg"
+            >
+              VERIFY ACCESS
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen text-slate-200 p-4 md:p-8 relative">
+       <div className="cyber-bg"></div>
+       <div className="scanlines-overlay"></div>
+       
+       <div className="max-w-xl mx-auto relative z-10 flex flex-col min-h-screen">
+          <header className="bg-[rgba(12,14,20,0.85)] border border-[rgba(217,70,239,0.15)] p-4 rounded-lg flex justify-between items-center mb-8">
+            <div className="flex items-center gap-3">
+              <div className="font-[Outfit] font-black text-2xl tracking-widest">
+                GLORY<span className="text-yellow-400"> BOT</span>
+              </div>
+            </div>
+            <div className="flex flex-col items-end">
+                <div className="text-xs bg-yellow-400/10 text-yellow-400 px-2 py-1 rounded font-bold tracking-wide mb-1 border border-yellow-400/20">🏆 30K+ BROTHERS</div>
+                <div className="text-[10px] font-mono tracking-widest text-[#64748b]">NET: <span className="text-green-500 pulse ml-1 font-bold">SECURE</span></div>
+            </div>
+          </header>
+
+          <main className="flex-grow">
+            {currentView === 'intro' && (
+              <div className="flex flex-col items-center justify-center h-64 mt-20">
+                <h1 className="text-4xl font-black tracking-widest glitch text-yellow-400" data-text="GLORY BOT">GLORY BOT</h1>
+                <p className="font-mono text-fuchsia-400 mt-4 tracking-widest pulse-text text-sm">[ SYSTEM INITIALIZATION ]</p>
+                <div className="w-64 h-2 bg-gray-800 mt-8 rounded overflow-hidden">
+                  <div className="h-full bg-fuchsia-400 w-1/2 animate-[ping_2s_infinite]"></div>
+                </div>
+              </div>
+            )}
+
+            {currentView === 'target' && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="text-center mb-6">
+                  <span className="font-mono text-[#d946ef] text-sm tracking-widest pulse-text">{">>"} CONNECTION_STABLE // READY</span>
+                </div>
+                <div className="hud-card">
+                  <h2 className="text-yellow-400 font-black text-xl md:text-2xl tracking-widest mb-1">TARGET ACQUISITION</h2>
+                  <p className="font-mono text-xs text-slate-400 mb-6 tracking-wider">Enter encrypted identifiers to establish sync.</p>
+                  
+                  <div className="space-y-4">
+                      <div>
+                          <label className="block text-xs font-mono text-slate-300 mb-2 tracking-widest">PLAYER UID <span className="text-red-500">*</span></label>
+                          <input 
+                            type="text" 
+                            placeholder="0000000000" 
+                            value={uid}
+                            onChange={e => { playSound('type'); setUid(e.target.value); }}
+                            className="w-full bg-black/60 border border-fuchsia-500/30 p-3 text-white font-mono tracking-wider focus:outline-none focus:border-fuchsia-400 focus:shadow-[0_0_10px_rgba(217,70,239,0.2)]"
+                          />
+                      </div>
+                      <div>
+                          <label className="block text-xs font-mono text-slate-300 mb-2 tracking-widest">GUILD UID</label>
+                          <input 
+                            type="text" 
+                            placeholder="Enter Guild ID" 
+                            value={guildUid}
+                            onChange={e => { playSound('type'); setGuildUid(e.target.value); }}
+                            className="w-full bg-black/60 border border-fuchsia-500/30 p-3 text-white font-mono tracking-wider focus:outline-none focus:border-fuchsia-400 focus:shadow-[0_0_10px_rgba(217,70,239,0.2)]"
+                          />
+                      </div>
+                      <div>
+                          <label className="block text-xs font-mono text-slate-300 mb-2 tracking-widest">SERVER REGION</label>
+                          <select onChange={() => playSound('type')} className="w-full bg-black/60 border border-fuchsia-500/30 p-3 text-fuchsia-400 font-mono tracking-wider focus:outline-none">
+                              <option value="IND">INDIA [IND-CORE]</option>
+                              <option value="BD">BANGLADESH [BD-NODE]</option>
+                              <option value="PK">PAKISTAN [PK-NODE]</option>
+                          </select>
+                      </div>
+                      
+                      <button 
+                        onClick={handleInitiateScan}
+                        className="w-full btn-cyber py-4 mt-4 tracking-widest text-lg"
+                      >
+                          INITIATE SCAN
+                      </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {currentView === 'bot' && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 hud-card">
+                  <h2 className="text-red-500 font-black text-xl md:text-2xl tracking-widest mb-6 text-center shadow-red-500">SELECT OVERRIDE BOT</h2>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                      {['ULTRA', 'VIP', 'PRO', 'CUSTOM'].map((botLevel) => (
+                        <div 
+                          key={botLevel}
+                          onClick={() => { playSound('click'); setSelectedBot(botLevel); }}
+                          className={`p-4 border ${selectedBot === botLevel ? 'border-yellow-400 bg-yellow-400/10' : 'border-fuchsia-500/20 bg-black/40'} cursor-pointer transition-colors relative`}
+                        >
+                          {botLevel === 'ULTRA' && <span className="absolute top-2 right-2 bg-yellow-400 text-black text-[10px] font-black px-1">MAX</span>}
+                          <h3 className="font-black text-lg tracking-wider mb-1 text-white">GLORY {botLevel}</h3>
+                          <div className="font-mono text-[10px] text-yellow-400 mb-3">PWR: {botLevel==='ULTRA'?'500+':botLevel==='VIP'?'300+':botLevel==='PRO'?'200+':'VARIABLE'} THREADS</div>
+                          <div className="w-full bg-gray-800 h-1.5 mb-1">
+                            <div className={`h-full ${botLevel==='ULTRA'?'bg-green-500 w-[95%]':botLevel==='VIP'?'bg-yellow-400 w-[85%]':botLevel==='PRO'?'bg-blue-500 w-[80%]':'bg-red-500 w-[60%]'}`}></div>
+                          </div>
+                          <div className="font-mono text-[9px] text-slate-400 flex justify-between">
+                            <span>SYNC RATE</span>
+                            <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div> ACTIVE</span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+
+                  <button 
+                    onClick={() => { playSound('click'); setCurrentView('file'); }}
+                    className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-4 mt-6 tracking-widest text-lg clip-path-[polygon(10px_0,100%_0,100%_calc(100%-10px),calc(100%-10px)_100%,0_100%,0_10px)] transition-all"
+                  >
+                      DEPLOY BOT
+                  </button>
+              </div>
+            )}
+
+            {currentView === 'file' && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 hud-card">
+                  <h2 className="text-yellow-400 font-black text-xl tracking-widest mb-1">PAYLOAD INJECTION</h2>
+                  <p className="font-mono text-xs text-slate-400 mb-6 tracking-wider">Inject config matrix to bypass security.</p>
+                  
+                  <div className="border-2 border-fuchsia-500/40 bg-black/60 p-6 flex flex-col items-center justify-center text-center transition-colors mb-6">
+                     <div className={`text-4xl mb-4 ${!injectionComplete ? 'animate-spin' : 'pulse-text'}`}>⚙️</div>
+                     <h3 className="font-mono text-fuchsia-400 tracking-widest text-sm mb-3">
+                         {injectionComplete ? "INJECTION SUCCESSFUL" : "PROCESSING PAYLOAD..."}
+                     </h3>
+                     
+                     <div className="w-full bg-gray-800 h-2 mb-2 overflow-hidden rounded">
+                        <div className="h-full bg-fuchsia-500 transition-all duration-100 ease-linear" style={{ width: `${injectionProgress}%` }}></div>
+                     </div>
+                     <div className="font-mono text-[10px] text-fuchsia-400 text-right w-full">{injectionProgress}%</div>
+                  </div>
+
+                  <button 
+                    onClick={() => { playSound('success'); setCurrentView('final'); }}
+                    disabled={!injectionComplete}
+                    className={`w-full ${injectionComplete ? 'btn-cyber' : 'bg-gray-800 text-gray-500 cursor-not-allowed'} py-4 tracking-widest text-lg transition-all border ${!injectionComplete && 'border-gray-700'}`}
+                  >
+                      {injectionComplete ? 'ESTABLISH LINK' : 'INJECTING...'}
+                  </button>
+              </div>
+            )}
+
+            {currentView === 'final' && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+                  <div className="text-center">
+                    <h1 className="text-green-500 font-black text-2xl tracking-widest glitch" data-text="UPLINK SUCCESSFUL">UPLINK SUCCESSFUL</h1>
+                  </div>
+
+                  <div className="hud-card">
+                     <div className="flex border-b border-white/10 pb-4 mb-4">
+                       <div className="w-12 h-12 bg-black/50 border border-fuchsia-500/30 flex items-center justify-center text-xl mr-4">🐺</div>
+                       <div>
+                         <h2 className="text-yellow-400 font-black tracking-widest text-lg">GLORY ARMY</h2>
+                         <p className="font-mono text-[10px] text-slate-400">ID: <span className="text-white">{guildUid || '3000628318'}</span> | <span className="text-fuchsia-400">IND-CORE</span></p>
+                       </div>
+                     </div>
+                     <div className="flex justify-between font-mono text-[10px] tracking-widest">
+                       <div><div className="text-slate-500 mb-1">MEMBERS</div><div className="text-white">49/50</div></div>
+                       <div><div className="text-slate-500 mb-1 text-center">CAPTAIN</div><div className="text-yellow-400">GLORY_ADMIN</div></div>
+                       <div className="text-right"><div className="text-yellow-400 mb-1">TOTAL GLORY</div><div className="text-green-400 text-sm">{glory + 1254300}</div></div>
+                     </div>
+                  </div>
+
+                  <div className="hud-card relative">
+                     <div className="absolute top-2 right-4 font-mono text-[8px] text-slate-500 tracking-widest">[ LIVE SYNC: ENGAGED ]</div>
+                     <div className="flex justify-between items-end border-b border-white/10 pb-4 mb-4 pt-2">
+                       <div className="flex items-center gap-3">
+                         <div className="text-fuchsia-400 text-2xl">🛡️</div>
+                         <div>
+                            <div className="font-mono text-slate-400 text-[10px] tracking-widest">TARGET UID: <span className="text-white font-bold">{uid || 'PLAYER_FOUND'}</span></div>
+                            <div className="font-mono text-slate-400 text-[10px] tracking-widest mt-1">CLAN: <span className="text-white">GLORY CORE</span></div>
+                         </div>
+                       </div>
+                       <div className="bg-green-500/20 border border-green-500/40 text-green-500 px-2 py-1 flex items-center gap-2">
+                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                         <span className="font-mono text-[10px] font-bold">RUNNING</span>
+                       </div>
+                     </div>
+
+                     <div className="flex justify-between font-mono tracking-widest mb-6">
+                        <div><span className="text-slate-500 text-[10px]">UPTIME:</span> <span className="text-white text-xs font-bold">{formatTime(uptime)}</span></div>
+                        <div><span className="text-slate-500 text-[10px]">GLORY:</span> <span className="text-yellow-400 text-xs font-bold">+ {glory}</span></div>
+                        <div className="text-green-500 font-bold text-xs">+1000/3m</div>
+                     </div>
+
+                     <div className="mb-6">
+                        <div className="flex justify-between font-mono text-[10px] font-bold tracking-widest mb-2">
+                          <span className="text-slate-500">CYCLE LIMIT</span>
+                          <span className="text-yellow-400">{((uptime % 180) / 180 * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="h-1 bg-gray-800 w-full overflow-hidden">
+                           <div className="h-full bg-yellow-400 transition-all duration-1000 ease-linear" style={{ width: `${(uptime % 180) / 180 * 100}%` }}></div>
+                        </div>
+                     </div>
+
+                     <div className="grid grid-cols-2 gap-4">
+                        <button onClick={() => { playSound('click'); setCurrentView('target'); }} className="btn-cyber-outline py-3 text-red-500 border-red-500/50 hover:bg-red-500/10">ABORT</button>
+                        <button onClick={() => playSound('click')} className="btn-cyber-outline py-3">LOGS</button>
+                     </div>
+                  </div>
+              </div>
+            )}
+          </main>
+
+          <footer className="mt-8 border-t border-fuchsia-500/20 pt-4 pb-8 flex flex-col items-center gap-4">
+             <div className="flex gap-4 w-full">
+                <a onClick={() => playSound('click')} href="https://www.youtube.com/@GAMINGXSOURAV-e7t" target="_blank" rel="noreferrer" className="flex-1 bg-black/40 border border-fuchsia-500/30 text-center py-2 font-mono text-xs tracking-widest hover:bg-fuchsia-500/10 transition-colors">▶ YOUTUBE</a>
+                <a onClick={() => playSound('click')} href="https://t.me/guildglorybot07" target="_blank" rel="noreferrer" className="flex-1 bg-black/40 border border-fuchsia-500/30 text-center py-2 font-mono text-xs tracking-widest hover:bg-fuchsia-500/10 transition-colors">✈ TELEGRAM</a>
+             </div>
+             <div className="font-mono text-[9px] tracking-widest text-slate-500 mt-2">
+                SYSTEM BY <strong className="text-yellow-400">GLORY BOT</strong> | PROPERTY OF PROJECT GLORY
+             </div>
+          </footer>
+       </div>
+    </div>
+  );
+}
+
